@@ -1,0 +1,241 @@
+.ORIG x3000
+	FORMATTED_MAP 	.FILL 	x3400
+	pos_x			.FILL	#0
+	pos_y			.FILL	#0
+	UP				.FILL	x77
+	DOWN			.FILL	x73
+	LEFT			.FILL	x61
+	RIGHT			.FILL	x64
+	SIZE_X			.FILL 	#20
+	SIZE_Y			.FILL 	#10
+	GAME_SIZE 		.FILL 	#200
+	GAME_CHAR 		.FILL 	x2B
+	ORIGIN_CHAR 	.FILL 	x23
+	GAME_MAP		.FILL	x3200
+
+	W 				.STRINGZ	"Moving Up!\n"
+	S 				.STRINGZ	"Moving Down!\n"
+	A 				.STRINGZ	"Moving Left!\n"
+	D 				.STRINGZ	"Moving Right!\n"
+;MAIN
+					JSR 	INIT_GAME_MAP
+					;memory location where input is stored (x3100)
+					LEA		R1,		xFF	
+					AND		R2,		R2,		#0
+					;pointer index of input		
+					ADD		R2,		R2,		R1
+
+					JSR		GET_INPUT
+					ADD		R0,		R1,		#0				;point R0 at our string
+					TRAP	x22
+
+					AND 	R3,		R3,		#0				;clear R3 to hold char data	
+
+					NOT		R2,		R2						;to find length of input
+					ADD 	R2,		R2,		#1				;take the 2's compliment of R2
+					ADD 	R2,		R1,		R2				;and add it to the address of input[0]
+					NOT		R2,		R2						;and
+					ADD 	R2,		R2,		#1				;2's compliment it again
+
+	LOOP			LDR		R3,		R0,		#0				;load char from mem[R0] to R3
+					ADD 	R0,		R0,		#1
+
+					AND 	R4,		R4,		#0				;clear R4
+					ADD 	R4,		R3,		#0				;and use as temporary storage for R3
+
+					;Moving Up
+	IF_UP			LD 		R5,		UP						;load UP into R5
+					NOT		R5,		R5						;and 2's compliment it
+					ADD 	R5,		R5, 	#1				;since we are subtracting DIRECTION from R3
+
+					ADD 	R5,		R3,		R5				
+					BRnp	IF_DOWN
+					AND 	R6, 	R6, 	#0				
+					ADD 	R6, 	R0, 	#0				;store R0 temporarily in R6
+					;EXECUTE GAME LOGIC HERE
+					LEA 	R0,		W
+					TRAP 	x0022
+					LD 		R5,		pos_y
+					ADD 	R5, 	R5, 	#-1				;pos_y -= 1
+					ST 		R5, 	pos_y
+					;END
+					AND 	R0, 	R0, 	#0
+					ADD 	R0, 	R6, 	#0				;revert R0 back to the value stored in R6
+
+					BR		INCR_LOOP
+
+	IF_DOWN			;Moving Down
+					LD 		R5,		DOWN					;load DOWN into R5
+					NOT		R5,		R5						;and 2's compliment it
+					ADD 	R5,		R5, 	#1				;since we are subtracting DIRECTION from R3
+
+					ADD 	R5,		R3,		R5			
+					BRnp	IF_LEFT
+					AND 	R6, 	R6, 	#0				
+					ADD 	R6, 	R0, 	#0				;store R0 temporarily in R6
+					;EXECUTE GAME LOGIC HERE
+					LEA 	R0,		S
+					TRAP 	x0022
+					LD 		R5,		pos_y
+					ADD 	R5, 	R5, 	#1				;pos_y += 1
+					ST 		R5, 	pos_y
+					;END
+					AND 	R0, 	R0, 	#0
+					ADD 	R0, 	R6, 	#0				;revert R0 back to the value stored in R6
+
+					BR		INCR_LOOP
+
+					AND 	R3, 	R3, 	#0				;clear R3
+					ADD 	R3, 	R3, 	R4				;and set it back to the value of the char from input
+
+	IF_LEFT			;Moving Left
+					LD 		R5,		LEFT					;load LEFT into R5
+					NOT		R5,		R5						;and 2's compliment it
+					ADD 	R5,		R5, 	#1				;since we are subtracting DIRECTION from R3
+
+					ADD 	R5,		R3,		R5				
+					BRnp	IF_RIGHT
+					AND 	R6, 	R6, 	#0				
+					ADD 	R6, 	R0, 	#0				;store R0 temporarily in R6
+					;EXECUTE GAME LOGIC HERE
+					LEA 	R0,		A
+					TRAP 	x0022
+					LD 		R5,		pos_x
+					ADD 	R5, 	R5, 	#-1				;pos_x -= 1
+					ST 		R5, 	pos_x
+					;END
+					AND 	R0, 	R0, 	#0
+					ADD 	R0, 	R6, 	#0				;revert R0 back to the value stored in R6
+
+					BR		INCR_LOOP
+
+					;Moving Right
+	IF_RIGHT		LD 		R5,		RIGHT					;load RIGHT into R5
+					NOT		R5,		R5						;and 2's compliment it
+					ADD 	R5,		R5, 	#1				;since we are subtracting DIRECTION from R3
+
+					ADD 	R5,		R3,		R5				
+					BRnp	INCR_LOOP
+					AND 	R6, 	R6, 	#0				
+					ADD 	R6, 	R0, 	#0				;store R0 temporarily in R6
+					;EXECUTE GAME LOGIC HERE
+					LEA 	R0,		D
+					TRAP 	x0022
+					LD 		R5,		pos_x
+					ADD 	R5, 	R5, 	#1				;pos_x += 1
+					ST 		R5, 	pos_x
+					;END
+					AND 	R0, 	R0, 	#0
+					ADD 	R0, 	R6, 	#0				;revert R0 back to the value stored in R6
+
+					BR		INCR_LOOP
+
+					;no need to reset R3 to charachter value 
+					;since we have reached the end of the loop
+
+	INCR_LOOP		AND 	R5,		R5, 	#0
+
+					LD  	R6,		GAME_MAP
+					LD  	R5, 	pos_x
+					ADD 	R6, 	R6,		R5
+					LD 		R5, 	pos_y
+					LD 		R4, 	SIZE_X
+	MULTIPLY_Y		ADD 	R6, 	R6,		R4
+					ADD 	R5, 	R5, 	#-1
+					BRp 	MULTIPLY_Y
+					LD 		R4, 	DOWN
+					STR 	R4, 	R6, 	#0
+
+					AND 	R5,		R5, 	#0
+
+					ADD 	R2,		R2,		#-1
+					BRp		LOOP	
+
+					JSR 	PRINT_MAP
+
+
+					TRAP 	x0025
+
+;SUBROUTINES
+
+					;calls getc until stdin recieves newline (0A)
+					;writes the result to wherever R1 points to
+					;Guarantees R0 will be 0 at end of execution
+					;R2 will be the length of the input at the end of execution
+	GET_INPUT		AND		R3,		R3,		#0				;NEWLINE_MASK (as 2's compliment)
+					;save R7 into R6 since TRAP x20 overwrites R7
+					AND		R6,		R6,		#0
+					ADD		R6,		R7,		#0
+
+	NEWLINE_MASK	.FILL	x000A
+					LD		R3,		NEWLINE_MASK
+					;twos compliment the mask since we want to subtract (x0A)
+					;for comparison in our GET_INPUT subroutine
+					NOT		R3,		R3
+					ADD		R3,		R3,		#1
+
+	GET_INPUT_LOOP	AND 	R0, 	R0,		#0				;input
+
+					TRAP 	x0020							;getch()
+
+					STR		R0,		R2,		#0				;store the result of getch at pointer index R2
+					ADD		R2,		R2,		#1				;increment pointer index
+					ADD		R0,		R0,		R3				;compare our input with NEWLINE_MASK
+
+					BRnp 	GET_INPUT_LOOP
+
+					STR		R0,		R2,		#0				;guarantee last char of string is \0
+					AND		R7,		R7,		#0				
+					ADD		R7,		R6,		#0				;set R7 back to correct address
+					RET
+
+	INIT_GAME_MAP 	lD  	R6,		GAME_MAP
+					LD 		R5,		GAME_SIZE
+					LD 		R4, 	GAME_CHAR
+	INIT_LOOP		STR 	R4,		R6, 	#0
+					ADD 	R6, 	R6, 	#1
+					ADD 	R5, 	R5, 	#-1
+					BRp 	INIT_LOOP
+					STR 	R4,		R6, 	#0
+
+					lD  	R6,		GAME_MAP
+					STR 	R4,		R6, 	#0
+
+					AND 	R4, 	R4, 	#0
+					AND 	R5, 	R5, 	#0
+					AND 	R6, 	R6, 	#0
+					RET
+
+	PRINT_MAP 		LD 		R6, 	GAME_MAP
+					LD 		R5, 	SIZE_X
+					AND 	R4, 	R4, 	#0
+					ADD 	R4, 	R4, 	R5
+					LD 		R3, 	GAME_SIZE
+					LD 		R1, 	FORMATTED_MAP
+	PRINT_MAP_LOOP	LDR 	R0, 	R6, 	#0
+					ADD 	R6, 	R6, 	#1
+					STR 	R0, 	R1, 	#0
+					ADD 	R1, 	R1, 	#1	
+					ADD 	R4, 	R4, 	#-1
+					BRp  	#6
+					AND 	R0, 	R0, 	#0
+					ADD 	R0, 	R0, 	x0A
+					STR 	R0, 	R1, 	#0
+					ADD 	R1, 	R1, 	#1
+					AND 	R4, 	R4, 	#0
+					ADD 	R4, 	R4, 	R5
+
+
+					ADD 	R3, 	R3, 	#-1
+					BRp 	PRINT_MAP_LOOP
+					STR 	R0, 	R1, 	#0
+					LD 		R0, 	FORMATTED_MAP
+					AND 	R2, 	R2, 	#0
+					ADD 	R2, 	R2, 	R7
+					LD 		R1, 	ORIGIN_CHAR
+					STR 	R1,		R0, 	#0		 	
+					TRAP 	x0022
+					AND 	R7, 	R7, 	#0
+					ADD 	R7, 	R7, 	R2
+					RET
+.END
